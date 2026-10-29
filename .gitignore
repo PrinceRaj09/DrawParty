@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+client/dist/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local tooling
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.local
+.DS_Store
+Thumbs.db
