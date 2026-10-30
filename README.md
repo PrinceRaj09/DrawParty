@@ -55,7 +55,13 @@ $env:VITE_SERVER_URL = "http://localhost:3002"
 npm.cmd run dev
 ```
 
-For play across the internet, deploy the frontend and backend separately and configure their public URLs and allowed origin. The local development addresses are not internet-accessible.
+For internet play, use the Render Blueprint below to deploy the frontend and backend with their public URLs connected. The local development addresses are not internet-accessible.
+
+## Deploy to Render
+
+The root `render.yaml` is a Render Blueprint for both services. Push this repository to GitHub, then in Render choose **New → Blueprint**, select the repository, and apply the Blueprint. Render will build the backend and frontend and connect their generated URLs automatically. Open the generated frontend URL to play.
+
+The root `.env.example` documents the local environment variables. Render reads deployment configuration from `render.yaml`; do not commit a real `.env` file or put secrets in the Blueprint. The free backend may take a little time to wake up after inactivity.
 
 ## Checks
 

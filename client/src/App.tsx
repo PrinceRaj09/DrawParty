@@ -144,9 +144,12 @@ function App() {
   };
 
   useEffect(() => {
-    const socket = io(
-      import.meta.env.VITE_SERVER_URL || "http://localhost:3001"
-    );
+    const configuredServerUrl =
+      import.meta.env.VITE_SERVER_URL || "http://localhost:3001";
+    const serverUrl = /^https?:\/\//i.test(configuredServerUrl)
+      ? configuredServerUrl
+      : `https://${configuredServerUrl}`;
+    const socket = io(serverUrl);
     socketRef.current = socket;
 
     socket.on("connect", () => {

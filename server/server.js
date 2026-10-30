@@ -6,7 +6,10 @@ const { Server } = require("socket.io");
 const app = express();
 const server = http.createServer(app);
 const port = Number(process.env.PORT) || 3001;
-const allowedOrigin = process.env.CLIENT_ORIGIN || "http://localhost:5173";
+const configuredOrigin = process.env.CLIENT_ORIGIN || "http://localhost:5173";
+const allowedOrigin = /^https?:\/\//i.test(configuredOrigin)
+  ? configuredOrigin
+  : `https://${configuredOrigin}`;
 
 app.use(cors({ origin: allowedOrigin }));
 app.use(express.json());

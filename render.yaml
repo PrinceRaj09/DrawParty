@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: drawparty-server
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: CLIENT_ORIGIN
+        fromService:
+          type: web
+          name: drawparty-client
+          property: host
+
+  - type: web
+    name: drawparty-client
+    runtime: static
+    rootDir: client
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_SERVER_URL
+        fromService:
+          type: web
+          name: drawparty-server
+          property: host
