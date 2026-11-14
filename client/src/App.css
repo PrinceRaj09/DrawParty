@@ -26,7 +26,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -444,6 +445,37 @@ button {
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+.play-card select {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  padding: 11px 12px;
+  border: 1px solid #e3dced;
+  border-radius: 11px;
+  outline: none;
+  background: #fcfbff;
+  color: #302747;
+  font-size: 13px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.play-card select:focus {
+  border-color: #9676f8;
+  box-shadow: 0 0 0 4px #7957f41a;
+  background: white;
+}
+
+.room-settings {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.room-setting label {
+  margin-top: 15px;
+}
+
 .play-card input::placeholder {
   color: #aaa1b8;
 }
@@ -729,6 +761,13 @@ button {
   color: #50465f;
   font-size: 12px;
   font-weight: 700;
+}
+
+.lobby-settings-summary {
+  margin: 16px 0 0;
+  color: #81788f;
+  font-size: 13px;
+  text-align: center;
 }
 
 .lobby-start select {
@@ -1844,6 +1883,7 @@ body {
 }
 
 :root[data-theme="dark"] .play-card input,
+:root[data-theme="dark"] .play-card select,
 :root[data-theme="dark"] .lobby-start select,
 :root[data-theme="dark"] .chat-form input {
   border-color: var(--line);
@@ -2056,6 +2096,10 @@ body {
   }
 
   .lobby-start {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .room-settings {
     grid-template-columns: minmax(0, 1fr);
   }
 

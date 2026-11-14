@@ -24,7 +24,9 @@ const io = new Server(server, {
 
 const rooms = new Map();
 const MAX_PLAYERS = 8;
-const ROUND_SECONDS = 60;
+const PLAYER_COUNT_OPTIONS = [2, 3, 4, 5, 6, 7, 8];
+const ROUNDS_PER_PLAYER_OPTIONS = [1, 2, 3];
+const ROUND_DURATION_OPTIONS = [30, 45, 60, 90, 120];
 const WORD_CHOICES = 3;
 const WORDS = [
   "rainbow", "guitar", "volcano", "penguin", "pizza", "spaceship",
@@ -50,10 +52,19 @@ function generateRoomCode() {
   throw new Error("Unable to generate a unique room code.");
 }
 
+function getRoomSetting(value, allowedValues, defaultValue) {
+  if (value === undefined) return defaultValue;
+  const setting = Number(value);
+  return allowedValues.includes(setting) ? setting : null;
+}
+
 function getRoomUpdate(room) {
   return {
     players: room.players,
     hostId: room.hostId,
+    maxPlayers: room.maxPlayers,
+    roundsPerPlayer: room.roundsPerPlayer,
+    roundDurationSeconds: room.roundDurationSeconds,
   };
 }
 
@@ -126,7 +137,7 @@ function startDrawing(roomCode, room, word) {
   game.word = word;
   game.strokes = [];
   game.guessed = new Set();
-  game.endsAt = Date.now() + ROUND_SECONDS * 1000;
+  game.endsAt = Date.now() + game.roundDurationSeconds * 1000;
 
   io.to(roomCode).emit("canvas-cleared");
   io.to(roomCode).emit("round-start", {
@@ -289,6 +300,22 @@ io.on("connection", (socket) => {
       return;
     }
 
+    const maxPlayers = getRoomSetting(data?.maxPlayers, PLAYER_COUNT_OPTIONS, MAX_PLAYERS);
+    const roundsPerPlayer = getRoomSetting(
+      data?.roundsPerPlayer,
+      ROUNDS_PER_PLAYER_OPTIONS,
+      1
+    );
+    const roundDurationSeconds = getRoomSetting(
+      data?.roundDurationSeconds,
+      ROUND_DURATION_OPTIONS,
+      60
+    );
+    if (maxPlayers === null || roundsPerPlayer === null || roundDurationSeconds === null) {
+      callback({ success: false, message: "Choose valid room settings before creating the room." });
+      return;
+    }
+
     removePlayerFromRoom(socket);
 
     let roomCode;
@@ -304,7 +331,14 @@ io.on("connection", (socket) => {
     }
 
     const player = { id: socket.id, name: playerName, score: 0 };
-    const room = { players: [player], hostId: socket.id, game: null };
+    const room = {
+      players: [player],
+      hostId: socket.id,
+      maxPlayers,
+      roundsPerPlayer,
+      roundDurationSeconds,
+      game: null,
+    };
     rooms.set(roomCode, room);
 
     socket.join(roomCode);
@@ -355,10 +389,10 @@ io.on("connection", (socket) => {
       return;
     }
 
-    if (room.players.length >= MAX_PLAYERS) {
+    if (room.players.length >= room.maxPlayers) {
       callback({
         success: false,
-        message: `Room is full. Maximum ${MAX_PLAYERS} players allowed.`,
+        message: `Room is full. Maximum ${room.maxPlayers} players allowed.`,
       });
       return;
     }
@@ -395,16 +429,12 @@ io.on("connection", (socket) => {
       return;
     }
 
-    const requestedRounds = Number(data?.rounds);
-    const roundsPerPlayer = Number.isInteger(requestedRounds)
-      ? Math.min(3, Math.max(1, requestedRounds))
-      : 1;
-
     for (const player of room.players) player.score = 0;
     room.game = {
       phase: "choosing",
       roundIndex: 0,
-      totalRounds: roundsPerPlayer * room.players.length,
+      totalRounds: room.roundsPerPlayer * room.players.length,
+      roundDurationSeconds: room.roundDurationSeconds,
       playerOrder: room.players.map((player) => player.id),
       drawerId: null,
       word: "",

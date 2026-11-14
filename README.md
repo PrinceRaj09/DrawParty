@@ -5,6 +5,7 @@ DrawParty is a real-time multiplayer drawing and guessing game built with React,
 ## Features
 
 - Create or join six-character game rooms.
+- Choose a room's player limit, rounds per player, and drawing time per round.
 - Play in real time with up to eight players per room.
 - Draw with a mouse or touch screen, using colors, brush sizes, an eraser, and canvas clearing.
 - Take turns drawing private word choices while other players guess in chat.

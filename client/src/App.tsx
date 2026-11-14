@@ -15,7 +15,13 @@ type Player = {
   score: number;
 };
 
-type RoomState = {
+type RoomSettings = {
+  maxPlayers: number;
+  roundsPerPlayer: number;
+  roundDurationSeconds: number;
+};
+
+type RoomState = RoomSettings & {
   roomCode: string;
   players: Player[];
   hostId: string;
@@ -104,7 +110,9 @@ function App() {
   const [isEraser, setIsEraser] = useState(false);
   const [chatEntries, setChatEntries] = useState<ChatEntry[]>([]);
   const [chatDraft, setChatDraft] = useState("");
+  const [maxPlayers, setMaxPlayers] = useState(8);
   const [roundsPerPlayer, setRoundsPerPlayer] = useState(1);
+  const [roundDurationSeconds, setRoundDurationSeconds] = useState(60);
   const [themeMode, setThemeMode] = useState<ThemeMode>(readThemeMode);
   const [isDark, setIsDark] = useState(
     () => window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -171,7 +179,7 @@ function App() {
     });
     socket.on(
       "players-updated",
-      (update: { players: Player[]; hostId: string }) => {
+      (update: Omit<RoomState, "roomCode">) => {
         setRoom((currentRoom) =>
           currentRoom ? { ...currentRoom, ...update } : currentRoom
         );
@@ -296,7 +304,7 @@ function App() {
     setMessage("");
     socketRef.current.timeout(5000).emit(
       "create-room",
-      { playerName: name },
+      { playerName: name, maxPlayers, roundsPerPlayer, roundDurationSeconds },
       (error: Error | null, response: RoomResponse) => {
         setIsLoading(false);
         if (error) {
@@ -312,6 +320,9 @@ function App() {
           roomCode: response.roomCode,
           players: response.players,
           hostId: response.hostId,
+          maxPlayers: response.maxPlayers,
+          roundsPerPlayer: response.roundsPerPlayer,
+          roundDurationSeconds: response.roundDurationSeconds,
         });
         setLobbyNotice("Room created! Invite your friends to join.");
       }
@@ -351,6 +362,9 @@ function App() {
           roomCode: response.roomCode,
           players: response.players,
           hostId: response.hostId,
+          maxPlayers: response.maxPlayers,
+          roundsPerPlayer: response.roundsPerPlayer,
+          roundDurationSeconds: response.roundDurationSeconds,
         });
         setLobbyNotice(`Joined room ${response.roomCode}.`);
       }
@@ -415,7 +429,7 @@ function App() {
   const handleStartGame = () => {
     emitWithResponse(
       "start-game",
-      { rounds: roundsPerPlayer },
+      {},
       () => {
         setMessage("");
         setChatEntries([]);
@@ -786,7 +800,7 @@ function App() {
           <section className="lobby-players" aria-labelledby="players-title">
             <div className="lobby-players-heading">
               <h2 id="players-title">Players</h2>
-              <span>{room.players.length} / 8</span>
+              <span>{room.players.length} / {room.maxPlayers}</span>
             </div>
             <ul className="player-list">
               {room.players.map((player) => (
@@ -813,25 +827,19 @@ function App() {
             )}
           </section>
 
+          <p className="lobby-settings-summary">
+            {room.roundsPerPlayer} round{room.roundsPerPlayer === 1 ? "" : "s"} per player · {room.roundDurationSeconds}s per round · up to {room.maxPlayers} players · {room.roundsPerPlayer * room.players.length} total rounds with current players
+          </p>
+
           {room.hostId === socketId && (
             <div className="lobby-start">
-              <label htmlFor="round-count">Rounds per player</label>
-              <select
-                id="round-count"
-                value={roundsPerPlayer}
-                onChange={(event) => setRoundsPerPlayer(Number(event.target.value))}
-              >
-                <option value={1}>1 round</option>
-                <option value={2}>2 rounds</option>
-                <option value={3}>3 rounds</option>
-              </select>
               <button
                 className="primary-button"
                 type="button"
                 onClick={handleStartGame}
                 disabled={room.players.length < 2 || isLoading}
               >
-                Start game <span>→</span>
+                Start {room.roundsPerPlayer * room.players.length}-round game <span>→</span>
               </button>
             </div>
           )}
@@ -995,6 +1003,48 @@ function App() {
                 setMessage("");
               }}
             />
+
+            <div className="room-settings">
+              <div className="room-setting">
+                <label htmlFor="create-max-players">Maximum players</label>
+                <select
+                  id="create-max-players"
+                  value={maxPlayers}
+                  onChange={(event) => setMaxPlayers(Number(event.target.value))}
+                  disabled={isLoading}
+                >
+                  {[2, 3, 4, 5, 6, 7, 8].map((count) => (
+                    <option key={count} value={count}>{count} players</option>
+                  ))}
+                </select>
+              </div>
+              <div className="room-setting">
+                <label htmlFor="create-rounds-per-player">Rounds per player</label>
+                <select
+                  id="create-rounds-per-player"
+                  value={roundsPerPlayer}
+                  onChange={(event) => setRoundsPerPlayer(Number(event.target.value))}
+                  disabled={isLoading}
+                >
+                  {[1, 2, 3].map((count) => (
+                    <option key={count} value={count}>{count} round{count === 1 ? "" : "s"} per player</option>
+                  ))}
+                </select>
+              </div>
+              <div className="room-setting">
+                <label htmlFor="create-round-duration">Time per round</label>
+                <select
+                  id="create-round-duration"
+                  value={roundDurationSeconds}
+                  onChange={(event) => setRoundDurationSeconds(Number(event.target.value))}
+                  disabled={isLoading}
+                >
+                  {[30, 45, 60, 90, 120].map((seconds) => (
+                    <option key={seconds} value={seconds}>{seconds} seconds</option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
             <button
               className="primary-button"
